@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SocialAuthController;
+use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -18,4 +19,17 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
     });
+});
+
+Route::middleware('auth:api')->group(function () {
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [UserProfileController::class, 'show']);
+        Route::put('/', [UserProfileController::class, 'update']);
+        Route::post('/photo', [UserProfileController::class, 'updatePhoto']);
+        Route::delete('/photo', [UserProfileController::class, 'deletePhoto']);
+        Route::post('/deactivate', [UserProfileController::class, 'deactivate']);
+        Route::delete('/', [UserProfileController::class, 'destroy']);
+    });
+
+    Route::get('users/{id}/profile', [UserProfileController::class, 'showById']);
 });

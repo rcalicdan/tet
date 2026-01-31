@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,20 +21,28 @@ class User extends Authenticatable
         'phone_number',
         'password',
         'user_type',
-        'provider_name',
-        'provider_id',
+        'google_id',
+        'apple_id',
         'is_active',
+        'profile_photo',
+        'bio',
+        'city',
+        'address',
     ];
 
     protected $hidden = [
         'password',
-        'provider_token',
         'remember_token',
+    ];
+
+    protected $appends = [
+        'full_name',
     ];
 
     protected function casts(): array
     {
         return [
+            'user_type' => UserType::class,
             'is_active' => 'boolean',
             'email_verified_at' => 'datetime',
         ];
@@ -44,6 +53,16 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn () => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''))
         );
+    }
+    
+    public function isClient(): bool
+    {
+        return $this->user_type === UserType::CLIENT;
+    }
+
+    public function isContractor(): bool
+    {
+        return $this->user_type === UserType::CONTRACTOR;
     }
 
     public function listings()
@@ -74,5 +93,20 @@ class User extends Authenticatable
     public function sentMessages()
     {
         return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function scopeClients($query)
+    {
+        return $query->where('user_type', UserType::CLIENT->value);
+    }
+
+    public function scopeContractors($query)
+    {
+        return $query->where('user_type', UserType::CONTRACTOR->value);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }
