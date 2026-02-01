@@ -25,9 +25,9 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('profile')->group(function () {
         Route::get('/', [UserProfileController::class, 'show']);
         Route::put('/', [UserProfileController::class, 'update']);
-        Route::post('/photo', [UserProfileController::class, 'updatePhoto']);
-        Route::delete('/photo', [UserProfileController::class, 'deletePhoto']);
-        Route::post('/deactivate', [UserProfileController::class, 'deactivate']);
+        Route::post('photo', [UserProfileController::class, 'updatePhoto']);
+        Route::delete('photo', [UserProfileController::class, 'deletePhoto']);
+        Route::post('deactivate', [UserProfileController::class, 'deactivate']);
         Route::delete('/', [UserProfileController::class, 'destroy']);
     });
 
