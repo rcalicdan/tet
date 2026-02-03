@@ -6,6 +6,7 @@ use App\Factories\AuthServiceFactory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\EmailLoginRequest;
 use App\Http\Requests\Auth\EmailRegisterRequest;
+use App\Http\Requests\Auth\EmailVerificationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -14,6 +15,89 @@ use OpenApi\Attributes as OA;
 class AuthController extends Controller
 {
     public function __construct(protected AuthServiceFactory $authFactory) {}
+
+    #[OA\Get(
+        path: '/api/auth/email/verify/{id}/{hash}',
+        summary: 'Verify email address',
+        tags: ['Auth'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'hash', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'expires', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'signature', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Email verified successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Email already verified'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Invalid verification link'),
+        ]
+    )]
+    public function verify(EmailVerificationRequest $request): JsonResponse
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email already verified',
+                'data' => [
+                    'verified' => true
+                ]
+            ], 200);
+        }
+
+        $request->fulfill();
+
+        return response()->json([
+            'message' => 'Email verified successfully',
+            'data' => [
+                'user' => $request->user(),
+                'verified' => true
+            ]
+        ]);
+    }
+
+    #[OA\Post(
+        path: '/api/auth/email/verify/resend',
+        summary: 'Resend email verification link',
+        tags: ['Auth'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Verification email sent',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Email already verified'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
+    )]
+    public function resend(Request $request): JsonResponse
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email already verified'
+            ], 400);
+        }
+
+        defer($request->user()->sendEmailVerificationNotification(...));
+
+        return response()->json([
+            'message' => 'Verification email sent successfully'
+        ]);
+    }
 
     #[OA\Post(
         path: '/api/auth/register',

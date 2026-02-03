@@ -16,6 +16,14 @@ Route::prefix('auth')->group(function () {
     });
 
     Route::middleware('auth:api')->group(function () {
+        Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verify'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
+
+        Route::post('email/verify/resend', [AuthController::class, 'resend'])
+            ->middleware('throttle:6,1')
+            ->name('verification.resend');
+
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
     });

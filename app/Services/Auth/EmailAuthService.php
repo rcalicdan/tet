@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Interfaces\AuthInterface;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -24,12 +25,15 @@ class EmailAuthService implements AuthInterface
             'is_active' => true,
         ]);
 
+        defer(fn() => event(new Registered($user)));
+
         $token = $user->createToken('Personal Access Token')->accessToken;
 
         return [
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'email_verified' => false,
         ];
     }
 
@@ -52,18 +56,27 @@ class EmailAuthService implements AuthInterface
             ]);
         }
 
+        // We can Uncomment to enforce email verification before login
+        // if (! $user->hasVerifiedEmail()) {
+        //     throw ValidationException::withMessages([
+        //         'email' => ['Please verify your email address first.'],
+        //     ]);
+        // }
+
         $token = $user->createToken('Personal Access Token')->accessToken;
 
         return [
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'email_verified' => $user->hasVerifiedEmail(),
         ];
     }
 
+
     public function loginWithSocialiteUser(SocialiteUser $socialiteUser): array
     {
-       throw new \Exception('Not supported for email authentication');
+        throw new \Exception('Not supported for email authentication');
     }
 
     public function logout(): bool
