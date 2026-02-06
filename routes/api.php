@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\ServiceListingController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -40,4 +42,30 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('users/{id}/profile', [UserProfileController::class, 'showById']);
+
+    Route::prefix('listings')->group(function () {
+        Route::get('/', [ServiceListingController::class, 'index']);
+        Route::get('/stats', [ServiceListingController::class, 'stats']);
+        Route::get('/service-types', [ServiceListingController::class, 'serviceTypes']);
+        Route::get('/cities', [ServiceListingController::class, 'cities']);
+        Route::post('/', [ServiceListingController::class, 'store']);
+        Route::get('/{listing}', [ServiceListingController::class, 'show']);
+        Route::put('/{listing}', [ServiceListingController::class, 'update']);
+        Route::delete('/{listing}', [ServiceListingController::class, 'destroy']);
+
+        Route::post('/{listing}/photos', [ServiceListingController::class, 'uploadPhotos']);
+        Route::delete('/{listing}/photos/{photo}', [ServiceListingController::class, 'deletePhoto']);
+        Route::post('/{listing}/photos/reorder', [ServiceListingController::class, 'reorderPhotos']);
+
+        Route::patch('/{listing}/toggle-status', [ServiceListingController::class, 'toggleStatus']);
+    });
+
+    Route::prefix('search')->group(function () {
+        Route::get('/', [SearchController::class, 'search']);
+        Route::get('/contractors', [SearchController::class, 'searchContractors']);
+        Route::get('/popular-service-types', [SearchController::class, 'popularServiceTypes']);
+        Route::get('/nearby', [SearchController::class, 'nearby']);
+        Route::get('/similar/{listing}', [SearchController::class, 'similar']);
+        Route::get('/autocomplete', [SearchController::class, 'autocomplete']);
+    });
 });

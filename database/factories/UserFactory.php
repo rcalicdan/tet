@@ -31,13 +31,12 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'phone_number' => '+48' . fake()->numerify('#########'),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => static::$password ??= Hash::make('12345678'),
             'user_type' => fake()->randomElement(UserType::cases()),
             'is_active' => true,
             'bio' => fake()->optional()->paragraph(),
             'city' => fake()->optional()->city(),
             'address' => fake()->optional()->address(),
-            'remember_token' => Str::random(10),
         ];
     }
 
