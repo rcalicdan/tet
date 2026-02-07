@@ -13,9 +13,12 @@ use App\Models\ListingPhoto;
 use App\Services\ServiceListingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ServiceListingController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         protected ServiceListingService $listingService
     ) {}
@@ -97,6 +100,8 @@ class ServiceListingController extends Controller
 
     public function store(StoreServiceListingRequest $request): JsonResponse
     {
+        $this->authorize('create', ServiceListing::class);
+
         try {
             $listing = $this->listingService->createListing(
                 $request->validated(),
@@ -120,6 +125,8 @@ class ServiceListingController extends Controller
 
     public function show(ServiceListing $listing): JsonResponse
     {
+        $this->authorize('view', $listing);
+
         $listing->load(['photos', 'contractor']);
 
         return response()->json([
@@ -130,12 +137,7 @@ class ServiceListingController extends Controller
 
     public function update(UpdateServiceListingRequest $request, ServiceListing $listing): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to update this listing',
-            ], 403);
-        }
+        $this->authorize('update', $listing);
 
         try {
             $listing = $this->listingService->updateListing(
@@ -160,12 +162,7 @@ class ServiceListingController extends Controller
 
     public function destroy(ServiceListing $listing): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to delete this listing',
-            ], 403);
-        }
+        $this->authorize('delete', $listing);
 
         try {
             $this->listingService->deleteListing($listing);
@@ -186,12 +183,7 @@ class ServiceListingController extends Controller
 
     public function uploadPhotos(Request $request, ServiceListing $listing): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to upload photos to this listing',
-            ], 403);
-        }
+        $this->authorize('managePhotos', $listing);
 
         $request->validate([
             'photos' => 'required|array|max:10',
@@ -219,12 +211,7 @@ class ServiceListingController extends Controller
 
     public function deletePhoto(ServiceListing $listing, ListingPhoto $photo): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to delete this photo',
-            ], 403);
-        }
+        $this->authorize('managePhotos', $listing);
 
         if ($photo->listing_id !== $listing->id) {
             return response()->json([
@@ -252,12 +239,7 @@ class ServiceListingController extends Controller
 
     public function reorderPhotos(Request $request, ServiceListing $listing): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to reorder photos for this listing',
-            ], 403);
-        }
+        $this->authorize('managePhotos', $listing);
 
         $request->validate([
             'photo_order' => 'required|array',
@@ -287,12 +269,7 @@ class ServiceListingController extends Controller
 
     public function toggleStatus(ServiceListing $listing): JsonResponse
     {
-        if (!$this->listingService->authorizeContractor($listing, auth()->id())) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to change this listing status',
-            ], 403);
-        }
+        $this->authorize('toggleStatus', $listing);
 
         try {
             $newStatus = $this->listingService->toggleStatus($listing);

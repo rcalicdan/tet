@@ -26,7 +26,6 @@ class ServiceListingService
         return $query->paginate($perPage);
     }
 
-
     protected function applyFilters(Builder $query, array $filters): void
     {
         if (!empty($filters['service_type'])) {
@@ -161,11 +160,13 @@ class ServiceListingService
 
     public function deleteListing(ServiceListing $listing): void
     {
-        foreach ($listing->photos as $photo) {
-            Storage::disk('public')->delete($photo->photo_url);
-        }
+        DB::transaction(function () use ($listing) {
+            foreach ($listing->photos as $photo) {
+                Storage::disk('public')->delete($photo->photo_url);
+            }
 
-        $listing->delete();
+            $listing->delete();
+        });
     }
 
     public function addPhotos(ServiceListing $listing, array $photos): void
@@ -219,10 +220,5 @@ class ServiceListingService
                 'sort_order' => $sortOrder,
             ]);
         }
-    }
-
-    public function authorizeContractor(ServiceListing $listing, string $contractorId): bool
-    {
-        return $listing->contractor_id === $contractorId;
     }
 }

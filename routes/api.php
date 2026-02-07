@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\ServiceListingController;
 use App\Http\Controllers\Api\SocialAuthController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,5 +68,22 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/nearby', [SearchController::class, 'nearby']);
         Route::get('/similar/{listing}', [SearchController::class, 'similar']);
         Route::get('/autocomplete', [SearchController::class, 'autocomplete']);
+    });
+
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/contractors', [UserController::class, 'contractors']);
+        Route::get('/clients', [UserController::class, 'clients']);
+        Route::get('/autocomplete', [UserController::class, 'autocomplete']);
+        Route::get('/popular-cities', [UserController::class, 'popularCities']);
+
+        Route::get('/{user}', [UserController::class, 'show']);
+        Route::put('/{user}', [UserController::class, 'update']);
+        Route::post('/{user}/photo', [UserController::class, 'updatePhoto']);
+        Route::delete('/{user}/photo', [UserController::class, 'deletePhoto']);
+        Route::post('/{user}/deactivate', [UserController::class, 'deactivate']);
+        Route::post('/{user}/activate', [UserController::class, 'activate']);
+        Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::get('/{user}/stats', [UserController::class, 'stats']);
     });
 });
