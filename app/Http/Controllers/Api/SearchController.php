@@ -17,30 +17,6 @@ class SearchController extends Controller
         protected SearchService $searchService
     ) {}
 
-    public function search(SearchListingsRequest $request): JsonResponse
-    {
-        try {
-            $results = $this->searchService->searchListings($request->validated());
-
-            return response()->json([
-                'success' => true,
-                'data' => ServiceListingResource::collection($results),
-                'meta' => [
-                    'current_page' => $results->currentPage(),
-                    'last_page' => $results->lastPage(),
-                    'per_page' => $results->perPage(),
-                    'total' => $results->total(),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to search listings',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function popularServiceTypes(): JsonResponse
     {
         try {

@@ -45,7 +45,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/{id}/profile', [UserProfileController::class, 'showById']);
 
     Route::prefix('listings')->group(function () {
-        Route::get('/', [ServiceListingController::class, 'index']);
+        Route::get('/', [ServiceListingController::class, 'index']); 
+        Route::get('/my-listings', [ServiceListingController::class, 'myListings']); 
         Route::get('/stats', [ServiceListingController::class, 'stats']);
         Route::get('/service-types', [ServiceListingController::class, 'serviceTypes']);
         Route::get('/cities', [ServiceListingController::class, 'cities']);
@@ -62,7 +63,6 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::prefix('search')->group(function () {
-        Route::get('/', [SearchController::class, 'search']);
         Route::get('/contractors', [SearchController::class, 'searchContractors']);
         Route::get('/popular-service-types', [SearchController::class, 'popularServiceTypes']);
         Route::get('/nearby', [SearchController::class, 'nearby']);

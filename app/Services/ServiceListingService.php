@@ -11,6 +11,24 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ServiceListingService
 {
+    public function getAllListings(array $filters = []): LengthAwarePaginator
+    {
+        $query = ServiceListing::query()
+            ->with(['photos', 'contractor']);
+
+        if (!empty($filters['contractor_id'])) {
+            $query->where('contractor_id', $filters['contractor_id']);
+        }
+
+        $this->applyFilters($query, $filters);
+        $this->applySearch($query, $filters);
+        $this->applySorting($query, $filters);
+
+        $perPage = $filters['per_page'] ?? 15;
+
+        return $query->paginate($perPage);
+    }
+
     public function getContractorListings(string $contractorId, array $filters = []): LengthAwarePaginator
     {
         $query = ServiceListing::query()
@@ -47,7 +65,63 @@ class ServiceListingService
         if (isset($filters['max_price'])) {
             $query->where('price', '<=', $filters['max_price']);
         }
+
+        if (!empty($filters['latitude']) && !empty($filters['longitude'])) {
+            $this->applyGeographicFilter($query, $filters);
+        }
     }
+
+    protected function applyGeographicFilter(Builder $query, array $filters): void
+    {
+        $latitude = $filters['latitude'];
+        $longitude = $filters['longitude'];
+        $radiusKm = $filters['radius_km'] ?? 50;
+
+        $query->selectRaw("
+        service_listings.*,
+        (
+            6371 * acos(
+                cos(radians(?)) * 
+                cos(radians(latitude)) * 
+                cos(radians(longitude) - radians(?)) + 
+                sin(radians(?)) * 
+                sin(radians(latitude))
+            )
+        ) AS distance
+        ", [$latitude, $longitude, $latitude]);
+
+        $query->whereRaw("
+        (
+            6371 * acos(
+                cos(radians(?)) * 
+                cos(radians(latitude)) * 
+                cos(radians(longitude) - radians(?)) + 
+                sin(radians(?)) * 
+                sin(radians(latitude))
+            )
+        ) <= ?
+        ", [$latitude, $longitude, $latitude, $radiusKm]);
+    }
+
+    protected function applySorting(Builder $query, array $filters): void
+    {
+        if (!empty($filters['search'])) {
+            return;
+        }
+
+        $sortBy = $filters['sort_by'] ?? 'newest';
+
+        match ($sortBy) {
+            'oldest' => $query->orderBy('created_at', 'asc'),
+            'price_asc' => $query->orderBy('price', 'asc')->orderBy('created_at', 'desc'),
+            'price_desc' => $query->orderBy('price', 'desc')->orderBy('created_at', 'desc'),
+            'service_type' => $query->orderBy('service_type', 'asc')->orderBy('created_at', 'desc'),
+            'city' => $query->orderBy('service_city', 'asc')->orderBy('created_at', 'desc'),
+            'newest' => $query->orderBy('created_at', 'desc'),
+            default => $query->orderBy('created_at', 'desc'),
+        };
+    }
+
 
     protected function applySearch(Builder $query, array $filters): void
     {
@@ -57,35 +131,26 @@ class ServiceListingService
 
         $searchTerm = $filters['search'];
 
-        if (DB::getDriverName() === 'pgsql') {
-            $query->where(function($q) use ($searchTerm) {
-                $q->whereRaw("searchable @@ websearch_to_tsquery('english', ?)", [$searchTerm])
-                  ->orWhere('service_type', 'ILIKE', '%' . $searchTerm . '%')
-                  ->orWhere('description', 'ILIKE', '%' . $searchTerm . '%')
-                  ->orWhere('service_city', 'ILIKE', '%' . $searchTerm . '%');
-            });
-        } else {
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('service_type', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('description', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('service_city', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-    }
-
-    protected function applySorting(Builder $query, array $filters): void
-    {
-        $sortBy = $filters['sort_by'] ?? 'newest';
-
-        match($sortBy) {
-            'oldest' => $query->orderBy('created_at', 'asc'),
-            'price_asc' => $query->orderBy('price', 'asc')->orderBy('created_at', 'desc'),
-            'price_desc' => $query->orderBy('price', 'desc')->orderBy('created_at', 'desc'),
-            'service_type' => $query->orderBy('service_type', 'asc')->orderBy('created_at', 'desc'),
-            'city' => $query->orderBy('service_city', 'asc')->orderBy('created_at', 'desc'),
-            'newest' => $query->orderBy('created_at', 'desc'),
-            default => $query->orderBy('created_at', 'desc'),
-        };
+        $query->where(function ($q) use ($searchTerm) {
+            $q->whereRaw("searchable @@ websearch_to_tsquery('english', ?)", [$searchTerm])
+                ->orWhere('service_type', 'ILIKE', '%' . $searchTerm . '%')
+                ->orWhere('description', 'ILIKE', '%' . $searchTerm . '%')
+                ->orWhere('service_city', 'ILIKE', '%' . $searchTerm . '%');
+        })
+            ->selectRaw("
+            *,
+            CASE 
+                WHEN searchable @@ websearch_to_tsquery('english', ?) THEN 
+                    ts_rank(searchable, websearch_to_tsquery('english', ?)) + 1
+                ELSE 
+                    GREATEST(
+                        similarity(service_type, ?),
+                        similarity(service_city, ?),
+                        similarity(description, ?) / 2
+                    )
+            END as search_rank
+        ", array_fill(0, 5, $searchTerm))
+            ->orderByDesc('search_rank');
     }
 
     public function getContractorStats(string $contractorId): array
@@ -97,7 +162,8 @@ class ServiceListingService
             'active' => (clone $listings)->where('status', 'active')->count(),
             'inactive' => (clone $listings)->where('status', 'inactive')->count(),
             'pending' => (clone $listings)->where('status', 'pending')->count(),
-            'total_photos' => ListingPhoto::whereIn('listing_id', 
+            'total_photos' => ListingPhoto::whereIn(
+                'listing_id',
                 (clone $listings)->pluck('id')
             )->count(),
             'service_types' => (clone $listings)
@@ -172,7 +238,7 @@ class ServiceListingService
     public function addPhotos(ServiceListing $listing, array $photos): void
     {
         $currentPhotoCount = $listing->photos()->count();
-        
+
         if ($currentPhotoCount + count($photos) > 10) {
             throw new \Exception('Maximum 10 photos allowed per listing');
         }
@@ -201,7 +267,7 @@ class ServiceListingService
     {
         $newStatus = $listing->status === 'active' ? 'inactive' : 'active';
         $listing->update(['status' => $newStatus]);
-        
+
         return $newStatus;
     }
 
@@ -211,7 +277,7 @@ class ServiceListingService
 
         foreach ($photos as $photo) {
             $sortOrder++;
-            
+
             $path = $photo->store('listings/' . $listing->id, 'public');
 
             ListingPhoto::create([

@@ -18,9 +18,13 @@ class IndexServiceListingRequest extends FormRequest
             'service_type' => 'nullable|string|max:100',
             'status' => 'nullable|in:active,inactive,pending',
             'city' => 'nullable|string|max:100',
+            'contractor_id' => 'nullable|uuid|exists:users,id',
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0|gte:min_price',
-            'sort_by' => 'nullable|in:newest,oldest,price_asc,price_desc,service_type,city',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'radius_km' => 'nullable|integer|min:1|max:500',
+            'sort_by' => 'nullable|in:newest,oldest,price_asc,price_desc,service_type,city,distance',
             'per_page' => 'nullable|integer|min:1|max:100',
         ];
     }
