@@ -213,6 +213,8 @@ class ServiceListingController extends Controller
     )]
     public function index(IndexServiceListingRequest $request): JsonResponse
     {
+        $this->authorize('viewAny', ServiceListing::class);
+        
         $listings = $this->listingService->getAllListings(
             $request->validated()
         );
