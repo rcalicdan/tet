@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\ServiceListingController;
+use App\Http\Controllers\Api\SmsAuthController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserProfileController;
@@ -30,6 +31,14 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
     });
+
+    Route::prefix('sms')->group(function () {
+        Route::post('register', [SmsAuthController::class, 'register']);
+        Route::post('verify', [SmsAuthController::class, 'verify']);
+        Route::post('complete', [SmsAuthController::class, 'completeRegistration']);
+        Route::post('resend', [SmsAuthController::class, 'resend']);
+        Route::post('login', [SmsAuthController::class, 'login']);
+    });
 });
 
 Route::middleware('auth:api')->group(function () {
@@ -45,8 +54,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('users/{id}/profile', [UserProfileController::class, 'showById']);
 
     Route::prefix('listings')->group(function () {
-        Route::get('/', [ServiceListingController::class, 'index']); 
-        Route::get('/my-listings', [ServiceListingController::class, 'myListings']); 
+        Route::get('/', [ServiceListingController::class, 'index']);
+        Route::get('/my-listings', [ServiceListingController::class, 'myListings']);
         Route::get('/stats', [ServiceListingController::class, 'stats']);
         Route::get('/service-types', [ServiceListingController::class, 'serviceTypes']);
         Route::get('/cities', [ServiceListingController::class, 'cities']);
