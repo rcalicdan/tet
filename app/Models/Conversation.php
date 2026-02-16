@@ -3,10 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Conversation extends Model
@@ -41,6 +37,21 @@ class Conversation extends Model
 
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class)->orderBy('created_at', 'asc');
+    }
+
+    public function latestMessage()
+    {
+        return $this->hasOne(Message::class)->latestOfMany();
+    }
+
+    public function hasParticipant(string $userId): bool
+    {
+        return $this->client_id === $userId || $this->contractor_id === $userId;
+    }
+
+    public function getOtherParticipant(string $userId): User
+    {
+        return $this->client_id === $userId ? $this->contractor : $this->client;
     }
 }

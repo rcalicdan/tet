@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\ServiceListingController;
 use App\Http\Controllers\Api\SmsAuthController;
@@ -94,5 +96,15 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/{user}/activate', [UserController::class, 'activate']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
         Route::get('/{user}/stats', [UserController::class, 'stats']);
+    });
+
+    Route::prefix('conversations')->group(function () {
+        Route::get('/', [ConversationController::class, 'index']);
+        Route::post('/', [ConversationController::class, 'store']);
+        Route::get('/{conversation}', [ConversationController::class, 'show']);
+
+        Route::get('/{conversation}/messages', [MessageController::class, 'index']);
+        Route::post('/{conversation}/messages', [MessageController::class, 'store']);
+        Route::post('/{conversation}/mark-read', [MessageController::class, 'markAsRead']);
     });
 });
