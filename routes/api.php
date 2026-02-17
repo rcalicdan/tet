@@ -106,5 +106,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/{conversation}/messages', [MessageController::class, 'index']);
         Route::post('/{conversation}/messages', [MessageController::class, 'store']);
         Route::post('/{conversation}/mark-read', [MessageController::class, 'markAsRead']);
+        Route::post('/{conversation}/typing', [MessageController::class, 'typing']); // ADD THIS LINE
     });
 });

@@ -8,6 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Redis;
 
 class UserTyping implements ShouldBroadcast
 {
@@ -17,8 +18,7 @@ class UserTyping implements ShouldBroadcast
         public string $conversationId,
         public User $user,
         public bool $isTyping
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {
@@ -35,9 +35,12 @@ class UserTyping implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'user_id' => $this->user->id,
-            'user_name' => $this->user->full_name,
-            'is_typing' => $this->isTyping,
+            'user' => [
+                'id' => $this->user->id,
+                'name' => $this->user->full_name,
+                'email' => $this->user->email,
+            ],
+            'isTyping' => $this->isTyping,
         ];
     }
 }
