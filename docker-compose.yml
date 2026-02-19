@@ -1,43 +1,13 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - .:/var/www/html
-    ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-    networks:
-      - listing-network
-    environment:
-      - REDIS_HOST=redis
-
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-null}
+    command: redis-server --appendonly yes
     networks:
       - listing-network
-    restart: unless-stopped
-
-  reverb:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      - redis
-    networks:
-      - listing-network
-    environment:
-      - REDIS_HOST=redis
     restart: unless-stopped
 
 volumes:

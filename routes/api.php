@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
+Broadcast::routes(['middleware' => ['auth:api']]);
+
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
@@ -106,6 +108,5 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/{conversation}/messages', [MessageController::class, 'index']);
         Route::post('/{conversation}/messages', [MessageController::class, 'store']);
         Route::post('/{conversation}/mark-read', [MessageController::class, 'markAsRead']);
-        Route::post('/{conversation}/typing', [MessageController::class, 'typing']); // ADD THIS LINE
     });
 });

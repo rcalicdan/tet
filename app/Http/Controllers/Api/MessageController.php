@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MessageResource;
 use App\Models\Conversation;
@@ -73,31 +72,6 @@ class MessageController extends Controller
                 'marked_count' => count($messageIds),
                 'message_ids' => $messageIds,
             ],
-        ]);
-    }
-
-    public function typing(Request $request, Conversation $conversation)
-    {
-        if (!$conversation->hasParticipant($request->user()->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $validated = $request->validate([
-            'is_typing' => 'required|boolean',
-        ]);
-
-        broadcast(new UserTyping(
-            $conversation->id,
-            $request->user(),
-            $validated['is_typing']
-        ))->toOthers();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Typing status broadcasted',
         ]);
     }
 }

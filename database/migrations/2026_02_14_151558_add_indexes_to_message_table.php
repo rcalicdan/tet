@@ -9,7 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            $table->index(['conversation_id', 'created_at']);
             $table->index(['sender_id', 'created_at']);
             $table->index('is_read');
         });
@@ -18,7 +17,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            $table->dropIndex(['conversation_id', 'created_at']);
             $table->dropIndex(['sender_id', 'created_at']);
             $table->dropIndex('is_read');
         });
