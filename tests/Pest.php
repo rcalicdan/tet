@@ -14,13 +14,13 @@ function authenticatedUser(array $attributes = []): array
 {
     $user = createUser($attributes);
     $token = $user->createToken('TestToken')->accessToken;
-    
+
     return [
         'user' => $user,
         'token' => $token,
         'headers' => [
             'Authorization' => "Bearer {$token}",
             'Accept' => 'application/json',
-        ]
+        ],
     ];
-}   
+}
