@@ -1,59 +1,233 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Project Setup
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+### 1. Clone the Repository
 
-## About Laravel
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 2. Install Dependencies
+```bash
+composer install
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 3. Environment Configuration
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Copy the example `.env` file and update the values accordingly:
+```bash
+cp .env.example .env
+```
 
-## Learning Laravel
+Update your `.env` with your database credentials:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=olejos_mobile_api
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 4. Generate Application Key
+```bash
+php artisan key:generate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+This sets the `APP_KEY` value in your `.env` file. The application will not run without it.
 
-## Laravel Sponsors
+### 5. Configure Email Settings
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+This application uses SMTP for sending emails (e.g., email verification). For development, configure your `.env` to log emails instead of sending them:
+```env
+MAIL_MAILER=log
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
 
-### Premium Partners
+**For Development:**
+- `MAIL_MAILER=log` - Emails will be logged to `storage/logs/laravel.log` instead of being sent
+- This is useful for testing without a real mail server
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+**For Production:**
+- Use a real SMTP service (e.g., Gmail, SendGrid, Mailgun, AWS SES)
+- Update `MAIL_MAILER=smtp` and provide valid credentials
 
-## Contributing
+**Example with Gmail:**
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="noreply@yourapp.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+> **Note:** This application uses Laravel's `defer()` function to send emails in the background without requiring queue workers. Emails are sent after the HTTP response is returned to the user, providing a faster user experience.
 
-## Code of Conduct
+### 6. Run Migrations
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Creates all database tables defined in your migration files:
+```bash
+php artisan migrate
+```
 
-## Security Vulnerabilities
+If you also have seeders and want to populate initial data:
+```bash
+php artisan migrate:fresh --seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 7. Set Up Passport
 
-## License
+Install Passport's database tables:
+```bash
+php artisan passport:install
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Then create a personal access client. This is required for token-based authentication when issuing tokens directly (e.g. login/register):
+```bash
+php artisan passport:client --personal
+```
+
+When prompted, you can press `Enter` to accept the default name (`Personal Access Client`). The generated client ID and secret will be stored in your database and referenced in your `.env`:
+```env
+PASSPORT_PERSONAL_CLIENT_ID=1
+PASSPORT_PERSONAL_CLIENT_SECRET=<generated-secret>
+```
+
+> **Note:** If you already have these values in your `.env.example`, `passport:install` handles this automatically. Only run `passport:client --personal` manually if the personal client is missing or was deleted.
+
+### 8. Start the Development Server
+```bash
+php artisan serve
+```
+
+The API will be available at `http://127.0.0.1:8000`.
+
+---
+
+## Viewing the API Documentation
+
+To auto-generate docs on every request in development, set this in your `.env`:
+```env
+L5_SWAGGER_GENERATE_ALWAYS=true
+```
+
+Open the Swagger UI in your browser:
+```
+http://127.0.0.1:8000/api/documentation
+```
+
+> Disable `L5_SWAGGER_GENERATE_ALWAYS` in production.
+
+---
+
+## Email Configuration Details
+
+### Development Setup (Recommended)
+
+Use the `log` driver to preview emails in your log files:
+```env
+MAIL_MAILER=log
+```
+
+Emails will be written to `storage/logs/laravel.log`. You can tail the log to see emails as they're sent:
+```bash
+tail -f storage/logs/laravel.log
+```
+
+### Testing with Mailtrap (Optional)
+
+For a better development experience, use [Mailtrap](https://mailtrap.io/):
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
+MAIL_ENCRYPTION=null
+```
+
+### Production Setup
+
+Use a reliable SMTP service:
+
+**Gmail:**
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+```
+
+**SendGrid:**
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.sendgrid.net
+MAIL_PORT=587
+MAIL_USERNAME=apikey
+MAIL_PASSWORD=your_sendgrid_api_key
+MAIL_ENCRYPTION=tls
+```
+
+**Mailgun:**
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.mailgun.org
+MAIL_PORT=587
+MAIL_USERNAME=your_mailgun_username
+MAIL_PASSWORD=your_mailgun_password
+MAIL_ENCRYPTION=tls
+```
+
+### Important Notes
+
+- **No Queue Workers Required**: This application uses Laravel's `defer()` function to handle email sending in the background without needing Redis or queue workers.
+- **Email Verification**: New user registrations will automatically receive a verification email.
+- **Email Templates**: Verification emails use custom Polish language templates located in `resources/views/emails/`.
+
+---
+
+## Quick Reference
+
+| Command | Description |
+|---|---|
+| `php artisan key:generate` | Generate the application encryption key |
+| `php artisan migrate` | Run database migrations |
+| `php artisan migrate:fresh --seed` | Re-run migrations and seed the database |
+| `php artisan passport:install` | Install Passport database tables |
+| `php artisan passport:client --personal` | Create a personal access client for token auth |
+| `php artisan serve` | Start the local development server |
+| `tail -f storage/logs/laravel.log` | View email logs in real-time (when using `log` mailer) |
+
+### Email-Related Commands
+
+| Command | Description |
+|---|---|
+| `php artisan config:clear` | Clear config cache after changing mail settings |
+| `php artisan view:clear` | Clear compiled email template views |
+
+---
+
+## Troubleshooting
+
+### Emails Not Sending
+
+1. Check your `.env` mail configuration
+2. Clear the config cache: `php artisan config:clear`
+3. Check logs: `tail -f storage/logs/laravel.log`
+4. Verify `storage/logs` directory is writable
+
+### Email Verification Issues
+
+1. Ensure `APP_URL` is set correctly in `.env`
+2. Check that the email template exists: `resources/views/emails/verify-email-custom.blade.php`
+3. Verify user's `email_verified_at` column exists in database
+
+---
